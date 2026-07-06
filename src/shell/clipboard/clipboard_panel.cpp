@@ -1752,6 +1752,16 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     return true;
   }
 
+  if (KeybindMatcher::matches(KeybindAction::DeleteNoConfirm, sym, modifiers)) {
+    performDeleteSelectedEntry();
+    return true;
+  }
+
+  if (KeybindMatcher::matches(KeybindAction::Delete, sym, modifiers)) {
+    requestDeleteSelectedEntry();
+    return true;
+  }
+
   return false;
 }
 

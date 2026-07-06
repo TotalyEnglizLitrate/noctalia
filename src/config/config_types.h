@@ -315,6 +315,8 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
   TabNext = 6,
   TabPrevious = 7,
+  Delete = 8,
+  DeleteNoConfirm = 9,
 };
 
 [[nodiscard]] std::vector<KeyChord> defaultKeybindSet(KeybindAction action);
@@ -1132,6 +1134,8 @@ struct KeybindsConfig {
   std::vector<KeyChord> down;
   std::vector<KeyChord> tabNext;
   std::vector<KeyChord> tabPrevious;
+  std::vector<KeyChord> deleteEntry;
+  std::vector<KeyChord> deleteNoConfirm;
 
   bool operator==(const KeybindsConfig&) const = default;
 };

@@ -265,6 +265,10 @@ namespace {
       return keybinds.tabNext;
     case KeybindAction::TabPrevious:
       return keybinds.tabPrevious;
+    case KeybindAction::Delete:
+      return keybinds.deleteEntry;
+    case KeybindAction::DeleteNoConfirm:
+      return keybinds.deleteNoConfirm;
     }
     return keybinds.validate;
   }

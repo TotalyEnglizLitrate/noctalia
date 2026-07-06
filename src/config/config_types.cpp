@@ -169,6 +169,10 @@ std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
     return {{.sym = XKB_KEY_Tab, .modifiers = 0}};
   case KeybindAction::TabPrevious:
     return {{.sym = XKB_KEY_ISO_Left_Tab, .modifiers = KeyMod::Shift}};
+  case KeybindAction::Delete:
+    return {{.sym = XKB_KEY_Delete, .modifiers = 0}};
+  case KeybindAction::DeleteNoConfirm:
+    return {{.sym = XKB_KEY_Delete, .modifiers = KeyMod::Shift}};
   }
   return {};
 }
