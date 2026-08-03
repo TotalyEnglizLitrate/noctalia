@@ -977,6 +977,7 @@ struct ShellConfig {
     bool showIcons = true;
     bool compact = false;
     bool appGrid = false;
+    bool showAppActions = false;
     bool sortByUsage = true;
     /// When true, refresh currency exchange rates from libqalculate's online sources.
     bool fetchExchangeRates = true;

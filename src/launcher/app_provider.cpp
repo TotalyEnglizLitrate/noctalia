@@ -4,6 +4,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
+#include "launcher/launcher_provider.h"
 #include "system/desktop_entry_launch.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
@@ -54,6 +55,20 @@ namespace {
     const double execScore = FuzzyMatch::score(pattern, entry.execLower);
 
     return std::max({nameScore, genericScore, keywordScore, catScore, idScore, execScore});
+  }
+
+  double scoreAction(std::string_view pattern, const DesktopAction& action) {
+    if (pattern.empty()) {
+      return 0.0;
+    }
+
+    double nameScore = FuzzyMatch::score(pattern, action.name) * 5.0;
+    if (FuzzyMatch::isMatch(nameScore) && action.name.starts_with(pattern)) {
+      nameScore += 500.0;
+    }
+    const double execScore = FuzzyMatch::score(pattern, action.exec);
+
+    return std::max(nameScore, execScore);
   }
 
   struct AppCategoryDef {
@@ -180,33 +195,48 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     return result;
   };
 
-  // Empty query: return all entries in alphabetical order (as stored)
-  if (pattern.empty()) {
-    std::vector<LauncherResult> results;
-    results.reserve(m_entries.size());
-    for (const auto& entry : m_entries) {
-      results.push_back(buildResult(entry, 0));
-    }
-    return results;
-  }
+  auto buildActionResult = [&](const DesktopEntry& entry, const DesktopAction& action, double s) {
+    LauncherResult result = buildResult(entry, s);
+    result.id = entry.path;
+    result.title = action.name;
+    result.subtitle = entry.name;
+    result.glyphName = "app-window";
+    result.desktopActionId = action.id;
+    result.score = s;
+    return result;
+  };
 
-  std::vector<std::pair<double, const DesktopEntry*>> scored;
+  std::vector<std::pair<double, std::pair<const DesktopEntry*, const DesktopAction*>>> scored;
+
   for (const auto& entry : m_entries) {
     const double s = scoreEntry(pattern, entry);
-    if (FuzzyMatch::isMatch(s)) {
-      scored.emplace_back(s, &entry);
+    if (pattern.empty() || FuzzyMatch::isMatch(s)) {
+      scored.emplace_back(s, std::make_pair(&entry, nullptr));
+    }
+
+    if (!m_config->config().shell.launcher.showAppActions)
+      continue;
+
+    for (const auto& action : entry.actions) {
+      const double actionScore = pattern.empty() ? 0 : scoreAction(pattern, action);
+      if (pattern.empty() || FuzzyMatch::isMatch(actionScore)) {
+        scored.emplace_back(actionScore, std::make_pair(&entry, &action));
+      }
     }
   }
+
   const auto cmp = [](const auto& a, const auto& b) { return a.first > b.first; };
-  const std::size_t limit = std::min(scored.size(), kMaxSearchResults);
+  const std::size_t limit = pattern.empty() ? scored.size() : std::min(scored.size(), kMaxSearchResults);
   std::partial_sort(scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(limit), scored.end(), cmp);
 
   std::vector<LauncherResult> results;
   results.reserve(limit);
   for (std::size_t i = 0; i < limit; ++i) {
-    const auto& [s, entry] = scored[i];
-    results.push_back(buildResult(*entry, s));
+    const auto& [s, pair] = scored[i];
+    const auto& [entry, action] = pair;
+    results.push_back(action ? buildActionResult(*entry, *action, s) : buildResult(*entry, s));
   }
+
   return results;
 }
 
