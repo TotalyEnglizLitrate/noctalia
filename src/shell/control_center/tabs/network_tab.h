@@ -89,4 +89,10 @@ private:
   bool m_actionPending = false;
   bool m_actionPendingConnected = false;
   std::chrono::steady_clock::time_point m_actionPendingSince;
+
+  bool m_wifiTogglePending = false;
+  bool m_wifiToggleTarget = false;
+  std::chrono::steady_clock::time_point m_wifiTogglePendingSince;
+
+  static constexpr std::chrono::seconds kActionPendingTimeout = std::chrono::seconds(6);
 };
